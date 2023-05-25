@@ -1,0 +1,32 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Define the billing threshold in USD
+    billing_threshold = 0.01
+
+    # Connect to AWS services
+    ec2_client = boto3.client('ec2')
+    cost_explorer_client = boto3.client('ce')
+
+    # Retrieve the current month-to-date estimated costs
+    response = cost_explorer_client.get_cost_and_usage(
+        TimePeriod={
+            'Start': '2023-05-25',
+            'End': '2023-06-01'
+        },
+        Granularity='WEEKLY',
+        Metrics=[
+            'UnblendedCost',
+        ]
+    )
+
+    # Extract the estimated costs
+    estimated_cost = float(response['ResultsByTime'][0]['Total']['UnblendedCost']['Amount'])
+
+    # Check if the estimated cost exceeds the threshold
+    if estimated_cost > billing_threshold:
+        # Stop the specified EC2 instance
+        ec2_client.stop_instances(InstanceIds=[instance_id])
+        print(f"Stopped EC2 instance: i-00146a7790a2ab491 ")
+    else:
+        print("Billing threshold not exceeded. No action needed.") 
